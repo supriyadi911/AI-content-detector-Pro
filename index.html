@@ -1763,7 +1763,7 @@
                             <div class="card-title"><i class="fa-solid fa-circle-nodes"></i> Konfigurasi Engine</div>
                         </div>
                         <div style="font-size:0.85rem; color: var(--text-secondary); line-height: 1.5; display:flex; flex-direction:column; gap:12px;">
-                            <p><strong>AI Content Detector Pro</strong> dirancang dengan modul simulasi forensik real-time yang membaca muatan spasial media langsung dari browser.</p>
+                            <p><strong>AI Content Detector Pro</strong> dirancang dengan modul simulasi forensik real-time yang membaca mualan spasial media langsung dari browser.</p>
                             <p><i class="fa-solid fa-microchip" style="color: var(--success);"></i> <strong>Akselerasi GPU:</strong> Otomatis aktif menggunakan WebGL & HTML5 Canvas untuk pemetaan matriks piksel.</p>
                             <p><i class="fa-solid fa-database" style="color: var(--accent);"></i> <strong>IndexedDB Status:</strong> Terkoneksi (Penyimpanan lokal 100% aman di browser Anda tanpa upload ke server eksternal).</p>
                             <p><i class="fa-solid fa-lock" style="color: var(--warning);"></i> <strong>Kebijakan Privasi:</strong> Tidak ada satu pun berkas gambar atau video yang dikirim ke jaringan luar. Seluruh proses pengolahan grafis dieksekusi client-side.</p>
@@ -2077,23 +2077,39 @@
 
             const labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
             
-            // Default mock datasets if DB is empty
-            let datasetAI = [2, 5, 8, 3, 12, 18, 9];
-            let datasetHuman = [15, 12, 19, 21, 14, 8, 11];
+            let datasetAI = [0, 0, 0, 0, 0, 0, 0];
+            let datasetHuman = [0, 0, 0, 0, 0, 0, 0];
 
-            // If we have actual DB items, distribute them for daily visual
+            // Filter dan hitung berdasarkan hari asli (senin-minggu) riil dari database
             if (records && records.length > 0) {
-                datasetAI = [0, 0, 0, 0, 0, 0, 0];
-                datasetHuman = [0, 0, 0, 0, 0, 0, 0];
-                
-                records.forEach((rec, idx) => {
-                    const dayIndex = idx % 7; 
+                records.forEach(rec => {
+                    let recordDate = new Date();
+                    if (rec.timestampMillis) {
+                        recordDate = new Date(rec.timestampMillis);
+                    } else if (rec.id && rec.id > 1000000000000) {
+                        recordDate = new Date(rec.id);
+                    } else if (rec.timestamp) {
+                        // Antisipasi format browser indonesia dengan titik pada jam
+                        const sanitizedTime = rec.timestamp.replace(/\./g, ':');
+                        const parsed = Date.parse(sanitizedTime);
+                        if (!isNaN(parsed)) {
+                            recordDate = new Date(parsed);
+                        }
+                    }
+                    
+                    const day = recordDate.getDay(); // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+                    const dayIndex = day === 0 ? 6 : day - 1; // Map ke index labels [Sen=0, Sel=1, ..., Min=6]
+                    
                     if (rec.score > 50) {
                         datasetAI[dayIndex]++;
                     } else {
                         datasetHuman[dayIndex]++;
                     }
                 });
+            } else {
+                // Default dummy data jika DB kosong
+                datasetAI = [2, 5, 8, 3, 12, 18, 9];
+                datasetHuman = [15, 12, 19, 21, 14, 8, 11];
             }
 
             const paddingLeft = 35;
@@ -2104,10 +2120,12 @@
             const chartW = w - paddingLeft - paddingRight;
             const chartH = h - paddingTop - paddingBottom;
 
-            // Find max value to scale chart safely
-            const maxVal = Math.max(...datasetAI, ...datasetHuman, 5) + 2;
+            // Cari nilai tertinggi riil dari kedua dataset
+            const maxValRaw = Math.max(...datasetAI, ...datasetHuman, 4);
+            // Genapkan ke atas ke kelipatan 4 terdekat agar pembagian Y-Axis menghasilkan label integer cantik
+            const maxVal = Math.ceil(maxValRaw / 4) * 4;
 
-            // Draw Y-axis grid lines and labels
+            // Gambar Grid Garis Horizontal dan Label Y
             ctx.strokeStyle = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
             ctx.lineWidth = 1;
             ctx.fillStyle = currentTheme === 'dark' ? '#9ca3af' : '#475569';
@@ -2119,24 +2137,22 @@
                 const y = paddingTop + chartH - (chartH * ratio);
                 const valLabel = Math.round(maxVal * ratio);
                 
-                // Draw line
                 ctx.beginPath();
                 ctx.moveTo(paddingLeft, y);
                 ctx.lineTo(w - paddingRight, y);
                 ctx.stroke();
 
-                // Draw text
                 ctx.fillText(valLabel.toString(), paddingLeft - 8, y + 3);
             }
 
             const getX = (index) => paddingLeft + (chartW / (labels.length - 1)) * index;
             const getY = (val) => paddingTop + chartH - (chartH * (val / maxVal));
 
-            // Helper to draw a data line with gradient fills
+            // Fungsi pembantu untuk menggambar garis data dan bayangan gradient
             function drawLineDataset(data, strokeColor, fillColor) {
                 if (data.length === 0) return;
 
-                // Gradient Area Fill
+                // Gradient Area
                 ctx.beginPath();
                 ctx.moveTo(getX(0), getY(0));
                 data.forEach((v, idx) => {
@@ -2151,7 +2167,7 @@
                 ctx.fillStyle = grad;
                 ctx.fill();
 
-                // Stroke Path
+                // Garis Stroke
                 ctx.strokeStyle = strokeColor;
                 ctx.lineWidth = 3;
                 ctx.lineCap = 'round';
@@ -2163,27 +2179,25 @@
                 });
                 ctx.stroke();
 
-                // Interactive Circle Points
+                // Bulatan Titik data interaktif
                 ctx.fillStyle = strokeColor;
                 data.forEach((v, idx) => {
                     ctx.beginPath();
                     ctx.arc(getX(idx), getY(v), 4, 0, 2 * Math.PI);
                     ctx.fill();
-                    // Inner white dot for premium look
                     ctx.fillStyle = '#ffffff';
                     ctx.beginPath();
                     ctx.arc(getX(idx), getY(v), 1.5, 0, 2 * Math.PI);
                     ctx.fill();
-                    ctx.fillStyle = strokeColor; // Restore
+                    ctx.fillStyle = strokeColor;
                 });
             }
 
-            // Draw Human dataset (Green)
+            // Gambar grafik data riil
             drawLineDataset(datasetHuman, '#10b981', 'rgba(16, 185, 129, 0.15)');
-            // Draw AI dataset (Red)
             drawLineDataset(datasetAI, '#ef4444', 'rgba(239, 68, 68, 0.15)');
 
-            // X-Axis labels
+            // Teks Label Hari X-Axis
             ctx.fillStyle = currentTheme === 'dark' ? '#9ca3af' : '#475569';
             ctx.font = "10px 'Plus Jakarta Sans'";
             ctx.textAlign = 'center';
@@ -2207,7 +2221,6 @@
                     else humanCount++;
                 });
             } else {
-                // Mock fallback
                 aiCount = 65;
                 humanCount = 35;
             }
@@ -2232,19 +2245,15 @@
                     ctx.arc(cx, cy, r, startAngle, startAngle + sliceAngle);
                     ctx.closePath();
                     ctx.fill();
-
-                    // Optional subtle donut-hole for sleek design
                     startAngle += sliceAngle;
                 });
 
-                // Render inner donut circle
                 ctx.fillStyle = currentTheme === 'dark' ? '#111827' : '#ffffff';
                 ctx.beginPath();
                 ctx.arc(cx, cy, r * 0.55, 0, 2 * Math.PI);
                 ctx.fill();
             }
 
-            // Legend layout adjustments for mobile/desktop
             ctx.font = "600 11px 'Plus Jakarta Sans'";
             ctx.textAlign = 'left';
             
@@ -2253,13 +2262,11 @@
                 const lx = cx + r + 20;
                 const ly = cy - 15 + idx * 26;
 
-                // Draw legend color square
                 ctx.fillStyle = colors[idx];
                 ctx.beginPath();
                 ctx.arc(lx + 6, ly + 6, 6, 0, 2 * Math.PI);
                 ctx.fill();
 
-                // Draw label text
                 ctx.fillStyle = currentTheme === 'dark' ? '#f3f4f6' : '#0f172a';
                 ctx.fillText(`${lbl} (${percentage}%)`, lx + 20, ly + 10);
             });
@@ -2408,7 +2415,7 @@
                 }, 'image/png');
             };
             img.onerror = function() {
-                showToast("Gagal memuat URL. Proteksi CORS server membatasi unduhan langsung.", "danger");
+                showToast("Gagal memuat URL. Proteksi CORS server membatasi downloads langsung.", "danger");
             };
             img.src = urlInput;
         }
@@ -2553,6 +2560,7 @@
 
             currentAnalysisResult = {
                 id: Date.now(),
+                timestampMillis: Date.now(), // Digunakan untuk kalkulasi grafik harian yang sangat presisi
                 filename: selectedFileData.name,
                 type: isVideo ? 'Video' : 'Gambar',
                 format: selectedFileData.type,
@@ -3035,7 +3043,7 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            showToast(`Laporan berhasil diekspor sebagai ${filename}`, 'success');
+            showToast("Laporan berhasil diekspor.", "success");
         }
     </script>
 </body>
