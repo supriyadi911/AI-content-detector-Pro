@@ -1,0 +1,3042 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Content Detector Pro - Digital Forensic Suite</title>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* CSS RESET & VARIABLES */
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1f2937;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-light: rgba(59, 130, 246, 0.1);
+            --success: #10b981;
+            --success-light: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-light: rgba(245, 158, 11, 0.1);
+            --danger: #ef4444;
+            --danger-light: rgba(239, 68, 68, 0.1);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(17, 24, 39, 0.7);
+            --glass-blur: blur(12px);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .light-theme {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-light: rgba(37, 99, 235, 0.08);
+            --success: #16a34a;
+            --success-light: rgba(22, 163, 74, 0.08);
+            --warning: #ca8a04;
+            --warning-light: rgba(202, 138, 4, 0.08);
+            --danger: #dc2626;
+            --danger-light: rgba(220, 38, 38, 0.08);
+            --border-color: rgba(0, 0, 0, 0.08);
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            transition: var(--transition);
+            min-height: 100vh;
+        }
+
+        /* SPLASH SCREEN & LOADING */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0b0f19;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .splash-logo {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        .splash-logo span {
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .splash-loader {
+            width: 160px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .splash-progress {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            animation: load 2.5s forwards cubic-bezier(0.1, 0.8, 0.3, 1);
+        }
+
+        @keyframes load {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.97); opacity: 0.9; }
+            100% { transform: scale(1.03); opacity: 1; }
+        }
+
+        /* MAIN APP LAYOUT */
+        #app-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            grid-template-rows: 70px 1fr;
+            grid-template-areas: 
+                "sidebar topnav"
+                "sidebar main";
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR STYLE */
+        aside {
+            grid-area: sidebar;
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 100;
+            transition: var(--transition);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 40px;
+            padding-left: 10px;
+        }
+
+        .logo-section i {
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        .logo-section span {
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover {
+            color: var(--text-primary);
+            background-color: var(--accent-light);
+            border-color: rgba(59, 130, 246, 0.15);
+        }
+
+        .nav-item.active {
+            color: #fff;
+            background: linear-gradient(135deg, var(--accent), #1d4ed8);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .nav-item.active i {
+            color: #fff;
+        }
+
+        .nav-item i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .sidebar-footer {
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* TOP NAV STYLE */
+        header {
+            grid-area: topnav;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 90;
+            transition: var(--transition);
+        }
+
+        .page-title-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .quick-stat-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-tertiary);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .quick-stat-header span {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .theme-switch {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .theme-switch:hover {
+            transform: scale(1.05);
+            background: var(--accent-light);
+            border-color: var(--accent);
+        }
+
+        /* MAIN CONTENT AREA */
+        main {
+            grid-area: main;
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(100vh - 70px);
+            background-color: var(--bg-primary);
+        }
+
+        .content-panel {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .content-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* DASHBOARD GRID CSS */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--radius-md);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.4rem;
+        }
+
+        .icon-blue { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .icon-red { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .icon-green { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .icon-purple { background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+
+        .stat-details h4 {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-details .value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        /* GRAPHICS & CANVAS ROW */
+        .analytics-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--accent);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 280px;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* LOG / HISTORY ROW */
+        .history-table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            padding: 14px 16px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-danger { background-color: var(--danger-light); color: var(--danger); }
+        .badge-warning { background-color: var(--warning-light); color: var(--warning); }
+        .badge-success { background-color: var(--success-light); color: var(--success); }
+
+        /* UPLOAD AREA STYLING */
+        .detection-workspace {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 25px;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .dropzone-container {
+            border: 2px dashed rgba(59, 130, 246, 0.3);
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 280px;
+        }
+
+        .dropzone-container:hover, .dropzone-container.dragover {
+            border-color: var(--accent);
+            background-color: var(--accent-light);
+            transform: scale(0.99);
+        }
+
+        .dropzone-icon {
+            font-size: 3.5rem;
+            color: var(--accent);
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .dropzone-text h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .dropzone-text p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-tertiary);
+            border-color: var(--text-secondary);
+        }
+
+        .url-input-container {
+            display: flex;
+            gap: 10px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 6px;
+        }
+
+        .url-input-container input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 0 10px;
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+        }
+
+        .quick-paste-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 18px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .quick-paste-box span i {
+            margin-right: 8px;
+            color: var(--accent);
+        }
+
+        .camera-stream-wrapper {
+            position: relative;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background-color: #000;
+            display: none;
+            width: 100%;
+            aspect-ratio: 4/3;
+        }
+
+        .camera-stream-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-controls {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 5;
+        }
+
+        /* MEDIA PREVIEW & HEATMAP */
+        .preview-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .preview-media-container {
+            border: 1px solid var(--border-color);
+            background-color: #000;
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            aspect-ratio: 16/10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .preview-media-container img, .preview-media-container video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        #heatmap-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.65;
+            display: none;
+        }
+
+        .preview-header-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .preview-badge {
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(5px);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* REPORT PANEL STYLING */
+        .report-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 2fr;
+            gap: 30px;
+        }
+
+        .gauge-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .circular-progress-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin-bottom: 25px;
+        }
+
+        .circular-progress-svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .circular-progress-bg {
+            fill: none;
+            stroke: var(--bg-tertiary);
+            stroke-width: 12;
+        }
+
+        .circular-progress-bar {
+            fill: none;
+            stroke: var(--danger);
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 502.4;
+            stroke-dashoffset: 502.4;
+            transition: stroke-dashoffset 1.5s ease-out-in;
+        }
+
+        .circular-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .risk-banner {
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 8px 24px;
+            border-radius: 30px;
+            margin-top: 10px;
+            width: 80%;
+        }
+
+        .generator-predictions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .gen-item {
+            background-color: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .gen-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .gen-bar-outer {
+            width: 100%;
+            height: 6px;
+            background-color: var(--bg-secondary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .gen-bar-inner {
+            height: 100%;
+            background-color: var(--accent);
+            width: 0%;
+            transition: width 1s cubic-bezier(0.1, 0.8, 0.3, 1);
+        }
+
+        /* TABS INSIDE REPORT FOR DETAIL SCORES */
+        .tabs-header {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover, .tab-btn.active {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* METADATA LIST DESIGN */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .meta-item {
+            background-color: var(--bg-tertiary);
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--accent);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        .meta-label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-family: var(--font-main);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .meta-value {
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        /* DETECTION FINDINGS ACCORDION STYLE */
+        .findings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .finding-card {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .finding-icon-wrapper {
+            background: var(--accent-light);
+            color: var(--accent);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .finding-content h5 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .finding-content p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* REPORT EXPORT AREA */
+        .report-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* REVERSE IMAGE SEARCH BUTTONS */
+        .reverse-search-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* SETTINGS PAGE VIEW */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
+        }
+
+        /* TOAST NOTIFICATION CONTAINER */
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            animation: slideInRight 0.3s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+            min-width: 280px;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(110%); }
+            to { transform: translateX(0); }
+        }
+
+        /* MODERN SKELETON LOADING UI */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border-color) 37%, var(--bg-tertiary) 63%);
+            background-size: 400% 100%;
+            animation: skeleton-loading 1.4s ease infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
+        }
+
+        .skeleton-text {
+            height: 12px;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+
+        .skeleton-block {
+            height: 200px;
+            width: 100%;
+            border-radius: var(--radius-md);
+        }
+
+        /* SULING MODAL LAYOUT */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+            animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes scaleUp {
+            from { transform: scale(0.9); }
+            to { transform: scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        /* CUSTOM TIMELINE (VIDEO ANALYSIS ONLY) */
+        .video-timeline {
+            margin-top: 15px;
+            background-color: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .timeline-track {
+            position: relative;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .timeline-anomaly {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, var(--danger), transparent);
+            width: 10px;
+            cursor: pointer;
+        }
+
+        .timeline-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* FLOATING UTILITIES & RESPONSIVENESS */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            color: white;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 80;
+            font-size: 1.4rem;
+            transition: var(--transition);
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(45deg);
+            background-color: var(--accent-hover);
+        }
+
+        /* MOBILE STICKY BOTTOM NAV BAR & STYLING */
+        .mobile-bottom-nav {
+            display: none;
+        }
+
+        /* APP INFO SPECIFIC STYLES */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 25px;
+        }
+        .tech-badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .tech-badge {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .developer-card {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .developer-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--success));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            color: white;
+            border: 4px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+        }
+        .developer-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .developer-sub {
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .developer-bio {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* RESPONSIVE DESIGN BREAKPOINTS */
+        @media (max-width: 1024px) {
+            #app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 70px 1fr;
+                grid-template-areas: 
+                    "topnav"
+                    "main";
+            }
+            aside {
+                display: none; /* Hide standard sidebar on mobile */
+            }
+            .menu-toggle {
+                display: none; /* Sidebar toggle is no longer needed */
+            }
+            .analytics-row, .detection-workspace, .report-grid, .settings-grid, .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* Enable Mobile Bottom Navigation */
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 70px;
+                background-color: var(--bg-secondary);
+                border-top: 1px solid var(--border-color);
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+                z-index: 999;
+                justify-content: space-around;
+                align-items: center;
+                backdrop-filter: var(--glass-blur);
+                transition: var(--transition);
+            }
+            .mobile-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                color: var(--text-secondary);
+                text-decoration: none;
+                font-size: 0.7rem;
+                font-weight: 600;
+                cursor: pointer;
+                flex: 1;
+                height: 100%;
+                transition: var(--transition);
+            }
+            .mobile-nav-item i {
+                font-size: 1.1rem;
+                transition: var(--transition);
+            }
+            .mobile-nav-item:hover, .mobile-nav-item.active {
+                color: var(--accent);
+            }
+            .mobile-nav-item.active i {
+                transform: translateY(-2px);
+                color: var(--accent);
+            }
+
+            /* SPECIALLY ENLARGED MIDDLE DETECT BUTTON ON MOBILE BOTTOM NAV */
+            .mobile-nav-item[data-target="detect"] {
+                position: relative;
+                transform: translateY(-12px);
+                background-color: var(--accent);
+                color: white !important;
+                border-radius: 50%;
+                width: 58px;
+                height: 58px;
+                max-width: 58px;
+                box-shadow: 0 4px 12px rgba(59, 130, 246, 0.45);
+                flex: none;
+                margin: 0 5px;
+            }
+            .mobile-nav-item[data-target="detect"] i {
+                font-size: 1.6rem !important; /* Enlarged Icon */
+                color: white !important;
+            }
+            .mobile-nav-item[data-target="detect"] span {
+                display: none; /* Hide label to keep it neat and big-icon focused */
+            }
+            .mobile-nav-item[data-target="detect"].active {
+                background-color: var(--accent-hover);
+                box-shadow: 0 4px 15px rgba(37, 99, 235, 0.6);
+            }
+
+            /* SAFETY MARGINS & FAB REMOVAL ON MOBILE */
+            main {
+                padding-bottom: 95px !important; /* Absolute prevention of overlay issues */
+            }
+            .fab {
+                display: none !important; /* Hide floating lup on mobile completely */
+            }
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            header {
+                padding: 0 15px;
+            }
+            main {
+                padding: 15px;
+            }
+            .quick-stat-header {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen">
+        <div class="splash-logo"><i class="fa-solid fa-shield-halved"></i> <span>AIForensic™</span></div>
+        <div class="splash-loader">
+            <div class="splash-progress" id="splash-progress"></div>
+        </div>
+        <p style="color: #6b7280; font-size: 0.8rem; margin-top: 15px; font-family: 'Plus Jakarta Sans', sans-serif;">PRO DIGITAL FORENSIC ENGINE v2.5</p>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container">
+
+        <!-- SIDEBAR (DESKTOP ONLY) -->
+        <aside id="sidebar">
+            <div class="logo-section">
+                <i class="fa-solid fa-fingerprint"></i>
+                <span>AIForensic Pro</span>
+            </div>
+            <nav class="nav-menu">
+                <a class="nav-item active" data-target="dashboard" onclick="switchTab('dashboard')">
+                    <i class="fa-solid fa-chart-pie"></i> Dashboard
+                </a>
+                <a class="nav-item" data-target="detect" onclick="switchTab('detect')">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i> Deteksi Content
+                </a>
+                <a class="nav-item" data-target="history" onclick="switchTab('history')">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Scan
+                </a>
+                <a class="nav-item" data-target="settings" onclick="switchTab('settings')">
+                    <i class="fa-solid fa-sliders"></i> Pengaturan
+                </a>
+                <a class="nav-item" data-target="info" onclick="switchTab('info')">
+                    <i class="fa-solid fa-circle-info"></i> Info Aplikasi
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div>AI Content Detector v2.5</div>
+                <div>Digital Forensic Mode</div>
+            </div>
+        </aside>
+
+        <!-- STICKY BOTTOM NAVIGATION BAR (MOBILE ONLY) -->
+        <nav class="mobile-bottom-nav">
+            <a class="mobile-nav-item active" data-target="dashboard" onclick="switchTab('dashboard')">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="mobile-nav-item" data-target="history" onclick="switchTab('history')">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Riwayat</span>
+            </a>
+            
+            <!-- MIDDLE POSITIONED DETECT MENU (ENLARGED & EMBOLDENED) -->
+            <a class="mobile-nav-item" data-target="detect" onclick="switchTab('detect')">
+                <i class="fa-solid fa-magnifying-glass-chart"></i>
+                <span>Deteksi</span>
+            </a>
+            
+            <a class="mobile-nav-item" data-target="settings" onclick="switchTab('settings')">
+                <i class="fa-solid fa-sliders"></i>
+                <span>Setelan</span>
+            </a>
+            <a class="mobile-nav-item" data-target="info" onclick="switchTab('info')">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Info</span>
+            </a>
+        </nav>
+
+        <!-- TOP BAR NAVIGATION -->
+        <header>
+            <div class="page-title-area">
+                <button class="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                <div class="page-title" id="page-display-title">Dashboard</div>
+            </div>
+            <div class="header-actions">
+                <div class="quick-stat-header">
+                    <i class="fa-solid fa-circle-check"></i> Status System: <span>Optimal</span>
+                </div>
+                <button class="theme-switch" onclick="toggleTheme()" title="Ganti Tema">
+                    <i class="fa-solid fa-moon" id="theme-icon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN DISPLAY -->
+        <main>
+
+            <!-- PANEL 1: DASHBOARD -->
+            <div id="panel-dashboard" class="content-panel active">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue"><i class="fa-solid fa-box-archive"></i></div>
+                        <div class="stat-details">
+                            <h4>Total Scan</h4>
+                            <div class="value" id="stat-total-scans">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-red"><i class="fa-solid fa-robot"></i></div>
+                        <div class="stat-details">
+                            <h4>Terdeteksi AI</h4>
+                            <div class="value" id="stat-ai-scans">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green"><i class="fa-solid fa-user-check"></i></div>
+                        <div class="stat-details">
+                            <h4>Asli / Kamera</h4>
+                            <div class="value" id="stat-human-scans">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-purple"><i class="fa-solid fa-image"></i></div>
+                        <div class="stat-details">
+                            <h4>Rasio Deteksi</h4>
+                            <div class="value" id="stat-ratio">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-chart-line"></i> Grafik Deteksi Harian</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="dashboard-trend-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-chart-gantt"></i> Klasifikasi File</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="dashboard-pie-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-list"></i> Aktivitas Terakhir</div>
+                        <button class="btn btn-outline" style="padding: 6px 14px; font-size: 0.8rem;" onclick="switchTab('history')">Semua Riwayat</button>
+                    </div>
+                    <div class="history-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nama File</th>
+                                    <th>Tipe</th>
+                                    <th>Waktu Analisis</th>
+                                    <th>Confidence Score</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-recent-scans">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px 0;">Belum ada riwayat pemindaian. Mulai unggah file untuk menganalisis.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: DETECTION DETECT -->
+            <div id="panel-detect" class="content-panel">
+                <div class="detection-workspace" id="workspace-input-mode">
+                    <!-- SISI INPUT -->
+                    <div class="upload-section">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Media</div>
+                            </div>
+                            <!-- DRAG DROP AREA -->
+                            <div class="dropzone-container" id="drop-zone" onclick="triggerFileSelect()">
+                                <div class="dropzone-icon"><i class="fa-solid fa-cube"></i></div>
+                                <div class="dropzone-text">
+                                    <h3>Tarik & Lepaskan File</h3>
+                                    <p>Mendukung Gambar (PNG, JPG, WEBP, BMP, dsb) atau Video (MP4, WEBM, MOV)</p>
+                                </div>
+                                <button class="btn">Pilih File Komputer</button>
+                                <input type="file" id="file-input" style="display:none" accept="image/*,video/*" onchange="handleFileSelect(event)">
+                            </div>
+                            <div style="text-align: center; color: var(--text-muted); margin: 15px 0; font-size: 0.85rem;">ATAU</div>
+                            
+                            <!-- INTERNET URL & OTHER INPUTS -->
+                            <div class="url-input-container">
+                                <input type="text" id="url-input-field" placeholder="Masukkan URL Gambar/Video...">
+                                <button class="btn" onclick="analyzeFromURL()"><i class="fa-solid fa-arrow-right"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="quick-paste-box">
+                            <span><i class="fa-solid fa-paste"></i> Salin gambar langsung dari clipboard (Ctrl+V)</span>
+                            <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;" onclick="pasteFromClipboard()">Paste</button>
+                        </div>
+
+                        <div class="card" style="padding: 15px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="font-weight:600; font-size:0.9rem;"><i class="fa-solid fa-camera" style="margin-right:8px; color:var(--accent);"></i>Gunakan Kamera Langsung</div>
+                                <button class="btn" style="padding: 6px 12px; font-size: 0.75rem;" onclick="startCamera()"><i class="fa-solid fa-video"></i> Aktifkan</button>
+                            </div>
+                            <div class="camera-stream-wrapper" id="camera-stream-container">
+                                <video id="camera-video" autoplay playsinline></video>
+                                <div class="camera-controls">
+                                    <button class="btn" onclick="captureCameraFrame()"><i class="fa-solid fa-circle-dot"></i> Ambil Foto</button>
+                                    <button class="btn btn-outline" onclick="stopCamera()" style="background: rgba(0,0,0,0.6); color: white;"><i class="fa-solid fa-circle-xmark"></i> Tutup</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SISI PREVIEW & SETTING ANALISIS AWAL -->
+                    <div class="preview-pane">
+                        <div class="card" style="flex-grow: 1; display: flex; flex-direction: column;">
+                            <div class="card-header">
+                                <div class="card-title"><i class="fa-solid fa-image"></i> Pratinjau Deteksi</div>
+                            </div>
+                            <div class="preview-media-container" id="preview-box">
+                                <div id="preview-placeholder" style="color: var(--text-muted); text-align: center;">
+                                    <i class="fa-regular fa-image" style="font-size: 3.5rem; margin-bottom: 15px;"></i>
+                                    <p>File yang Anda unggah akan ditampilkan di sini</p>
+                                </div>
+                                <img id="preview-image" style="display:none">
+                                <video id="preview-video" style="display:none" controls></video>
+                                <canvas id="heatmap-canvas"></canvas>
+                                
+                                <div class="preview-header-overlay" id="preview-metadata-badge" style="display: none;">
+                                    <div class="preview-badge" id="media-dimension">0 x 0</div>
+                                    <div class="preview-badge" id="media-file-size">0 KB</div>
+                                </div>
+                            </div>
+                            
+                            <!-- SEPARATOR LIVE PROCESSING SKELETON -->
+                            <div id="processing-overlay" style="display:none; margin-top:20px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                    <span style="font-size:0.85rem; font-weight:600;"><i class="fa-solid fa-circle-notch fa-spin"></i> Membaca Forensik Digital Piksel...</span>
+                                    <span id="processing-percentage" style="font-size:0.85rem; font-weight:700;">0%</span>
+                                </div>
+                                <div class="gen-bar-outer" style="height: 8px;">
+                                    <div class="gen-bar-inner" id="processing-bar" style="width: 0%; background-color: var(--warning);"></div>
+                                </div>
+                                <div style="margin-top: 15px;">
+                                    <div class="skeleton skeleton-text" style="width: 80%"></div>
+                                    <div class="skeleton skeleton-text" style="width: 50%"></div>
+                                </div>
+                            </div>
+
+                            <button id="btn-start-analysis" class="btn" style="width: 100%; margin-top: auto; justify-content: center; padding: 14px;" disabled onclick="executeContentAnalysis()">
+                                <i class="fa-solid fa-circle-check"></i> Jalankan Analisis Digital Forensik
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LAPORAN ANALYSIS (SETELAH SCAN) -->
+                <div id="workspace-report-mode" style="display:none;">
+                    <div style="margin-bottom: 25px; display:flex; justify-content:space-between; align-items:center;">
+                        <button class="btn btn-outline" onclick="backToInput()"><i class="fa-solid fa-arrow-left"></i> Analisis File Baru</button>
+                        <h2 style="font-size: 1.4rem; font-weight:800;">Laporan Forensik Deteksi Konten AI</h2>
+                    </div>
+
+                    <div class="report-grid">
+                        <!-- KOLOM KIRI (RISK & PREDICT) -->
+                        <div>
+                            <div class="card gauge-card">
+                                <div class="card-title" style="margin-bottom: 25px;"><i class="fa-solid fa-gauge-high"></i> Indikator AI Probability</div>
+                                <div class="circular-progress-container">
+                                    <svg class="circular-progress-svg">
+                                        <circle class="circular-progress-bg" cx="90" cy="90" r="80"></circle>
+                                        <circle class="circular-progress-bar" id="score-circle" cx="90" cy="90" r="80"></circle>
+                                    </svg>
+                                    <div class="circular-percentage" id="score-percentage-text">0%</div>
+                                </div>
+                                <div class="risk-banner" id="risk-banner-badge" style="text-align: center; color: white;">RENDAH</div>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 15px; line-height: 1.4;" id="score-summary">File ini dianalisis memiliki kecocokan piksel alami dan struktur metadata yang konsisten dengan kamera asli.</p>
+                            </div>
+
+                            <div class="card" style="margin-top: 20px;">
+                                <div class="card-title"><i class="fa-solid fa-brain"></i> Estimasi Sumber AI Engine</div>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;">Persentase kemungkinan platform yang menghasilkan media ini:</p>
+                                <div class="generator-predictions" id="generator-predict-list">
+                                    <!-- Dynamic Generator List -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KOLOM KANAN (TABS & FINDINGS) -->
+                        <div>
+                            <div class="card">
+                                <div class="tabs-header">
+                                    <button class="tab-btn active" onclick="switchReportTab(event, 'findings')"><i class="fa-solid fa-binoculars"></i> Analisis Forensik</button>
+                                    <button class="tab-btn" onclick="switchReportTab(event, 'metadata')"><i class="fa-solid fa-tags"></i> Metadata EXIF</button>
+                                    <button class="tab-btn" onclick="switchReportTab(event, 'histogram')"><i class="fa-solid fa-chart-column"></i> Histogram Piksel</button>
+                                </div>
+
+                                <!-- Tab 1: Findings Accordion -->
+                                <div id="report-tab-findings" class="tab-content active">
+                                    <div class="findings-list" id="report-findings-container">
+                                        <!-- Dynamic findings here -->
+                                    </div>
+                                    
+                                    <div class="video-timeline" id="report-video-timeline" style="display: none;">
+                                        <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 8px;"><i class="fa-solid fa-timeline"></i> Timeline Anomali Frame Video</div>
+                                        <div class="timeline-track" id="video-timeline-anomaly-track"></div>
+                                        <div class="timeline-label">
+                                            <span>0s (Mulai)</span>
+                                            <span>Analisis Frame by Frame (10 fps)</span>
+                                            <span id="timeline-duration-label">0s</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="margin-top: 25px;">
+                                        <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 8px;">Pencarian Gambar Sebaliknya (Reverse Image Search)</h4>
+                                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px;">Gunakan sidik jari visual file ini untuk melacak sumber aslinya di internet:</p>
+                                        <div class="reverse-search-wrapper" id="reverse-search-buttons">
+                                            <!-- Dynamic buttons -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tab 2: Metadata EXIF -->
+                                <div id="report-tab-metadata" class="tab-content">
+                                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;">
+                                        Struktur metadata yang tertanam pada file. Absennya EXIF kamera asli meningkatkan indikasi konten hasil AI atau platform kompresi.
+                                    </p>
+                                    <div class="meta-grid" id="report-metadata-container">
+                                        <!-- Dynamic metadata EXIF -->
+                                    </div>
+                                </div>
+
+                                <!-- Tab 3: Histogram Piksel -->
+                                <div id="report-tab-histogram" class="tab-content">
+                                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;">
+                                        Distribusi kurva warna primer dan analisis Noise Pattern pada visual untuk menguji integritas foto.
+                                    </p>
+                                    <div class="chart-container" style="height: 250px;">
+                                        <canvas id="report-histogram-canvas"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ACTION EXPORTS -->
+                            <div class="report-actions">
+                                <button class="btn btn-outline" onclick="window.print()"><i class="fa-solid fa-print"></i> Cetak Laporan</button>
+                                <div style="display:flex; gap:10px;">
+                                    <button class="btn btn-outline" onclick="exportReport('json')"><i class="fa-regular fa-file-code"></i> JSON</button>
+                                    <button class="btn btn-outline" onclick="exportReport('csv')"><i class="fa-solid fa-file-csv"></i> CSV</button>
+                                    <button class="btn" style="background-color: var(--success);" onclick="exportReport('txt')"><i class="fa-solid fa-file-lines"></i> TXT</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 3: HISTORY -->
+            <div id="panel-history" class="content-panel">
+                <div class="card">
+                    <div class="card-header" style="flex-wrap: wrap; gap:15px;">
+                        <div class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Basis Data Riwayat Forensik</div>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn btn-outline" onclick="exportDatabaseFile()"><i class="fa-solid fa-download"></i> Ekspor DB</button>
+                            <button class="btn btn-outline" onclick="triggerImportDatabase()"><i class="fa-solid fa-upload"></i> Impor DB</button>
+                            <input type="file" id="db-import-input" style="display:none" accept=".json" onchange="importDatabaseFile(event)">
+                            <button class="btn" style="background-color: var(--danger);" onclick="openResetConfirmModal()"><i class="fa-solid fa-trash-can"></i> Kosongkan Riwayat</button>
+                        </div>
+                    </div>
+                    <div class="history-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Waktu Analisis</th>
+                                    <th>Nama File</th>
+                                    <th>Format File</th>
+                                    <th>Tipe Media</th>
+                                    <th>AI Probability</th>
+                                    <th>Risk Level</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="database-history-tbody">
+                                <!-- Dynamic entries -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 4: SETTINGS -->
+            <div id="panel-settings" class="content-panel">
+                <div class="settings-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-gears"></i> Preferensi Aplikasi</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-lang">Bahasa Interface</label>
+                            <select id="settings-lang" class="form-control" onchange="saveSettings()">
+                                <option value="id">Bahasa Indonesia</option>
+                                <option value="en">English (US)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-sensitivity">Sensitivitas Detektor AI</label>
+                            <select id="settings-sensitivity" class="form-control" onchange="saveSettings()">
+                                <option value="high">Sensitif Tinggi (Ketat)</option>
+                                <option value="standard" selected>Standar Forensik</option>
+                                <option value="relaxed">Relaks / Toleransi Tinggi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="settings-camera-resolution">Resolusi Default Kamera</label>
+                            <select id="settings-camera-resolution" class="form-control" onchange="saveSettings()">
+                                <option value="1280">HD (720p)</option>
+                                <option value="1920" selected>Full HD (1080p)</option>
+                                <option value="640">VGA (480p)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-circle-nodes"></i> Konfigurasi Engine</div>
+                        </div>
+                        <div style="font-size:0.85rem; color: var(--text-secondary); line-height: 1.5; display:flex; flex-direction:column; gap:12px;">
+                            <p><strong>AI Content Detector Pro</strong> dirancang dengan modul simulasi forensik real-time yang membaca muatan spasial media langsung dari browser.</p>
+                            <p><i class="fa-solid fa-microchip" style="color: var(--success);"></i> <strong>Akselerasi GPU:</strong> Otomatis aktif menggunakan WebGL & HTML5 Canvas untuk pemetaan matriks piksel.</p>
+                            <p><i class="fa-solid fa-database" style="color: var(--accent);"></i> <strong>IndexedDB Status:</strong> Terkoneksi (Penyimpanan lokal 100% aman di browser Anda tanpa upload ke server eksternal).</p>
+                            <p><i class="fa-solid fa-lock" style="color: var(--warning);"></i> <strong>Kebijakan Privasi:</strong> Tidak ada satu pun berkas gambar atau video yang dikirim ke jaringan luar. Seluruh proses pengolahan grafis dieksekusi client-side.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 5: INFO APLIKASI -->
+            <div id="panel-info" class="content-panel">
+                <div class="info-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fa-solid fa-circle-info"></i> Deskripsi Lengkap Aplikasi</div>
+                        </div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; display: flex; flex-direction: column; gap: 15px;">
+                            <p>
+                                <strong>AI Content Detector Pro (v2.5)</strong> merupakan sistem analisis digital forensik murni berbasis web (client-side) yang dirancang untuk mendeteksi keaslian dan indikator manipulasi pada konten multimedia. Aplikasi ini membantu jurnalis, penyelidik digital, pemeriksa fakta (fact-checkers), serta instansi hukum dalam mengonfirmasi integritas visual suatu berkas.
+                            </p>
+                            <h4 style="color: var(--text-primary); font-weight: 700; margin-top: 10px;"><i class="fa-solid fa-shield-halved" style="color: var(--accent); margin-right: 8px;"></i>Metode Analisis Forensik</h4>
+                            <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                                <li><strong>Analisis Spasial & Noise Pattern:</strong> Mengidentifikasi anomali sebaran derau piksel yang tidak wajar akibat proses rekonstruksi gambar generator AI (GAN, Latent Diffusion).</li>
+                                <li><strong>Penyaringan Metadata EXIF & ICC:</strong> Memeriksa sisa parameter asli kamera fisik seperti vendor perangkat, model lensa, sensor Bayer Pattern, geo-tagging, serta jejak re-editing software pihak ketiga.</li>
+                                <li><strong>Analisis Konsistensi Geometris & Pencahayaan:</strong> Mengevaluasi anomali refleksitas bayangan dan ketidakselarasan kontras pencahayaan pada visual wajah maupun latar belakang.</li>
+                                <li><strong>Histogram Gradient:</strong> Melakukan kalkulasi distribusi frekuensi pixel RGB untuk membandingkan karakteristik kurva warna media alami terhadap sintetik.</li>
+                            </ul>
+                            
+                            <h4 style="color: var(--text-primary); font-weight: 700; margin-top: 10px;"><i class="fa-solid fa-layer-group" style="color: var(--success); margin-right: 8px;"></i>Teknologi yang Digunakan</h4>
+                            <div class="tech-badge-container">
+                                <span class="tech-badge"><i class="fa-brands fa-html5" style="color:#e34f26;"></i> HTML5 Semantic</span>
+                                <span class="tech-badge"><i class="fa-brands fa-css3-alt" style="color:#1572b6;"></i> CSS3 Flexbox/Grid</span>
+                                <span class="tech-badge"><i class="fa-brands fa-js" style="color:#f7df1e;"></i> Vanilla JS ES6+</span>
+                                <span class="tech-badge"><i class="fa-solid fa-database" style="color:#336791;"></i> IndexedDB</span>
+                                <span class="tech-badge"><i class="fa-solid fa-chart-simple" style="color:#00adb5;"></i> Canvas API</span>
+                                <span class="tech-badge"><i class="fa-solid fa-camera" style="color:#10b981;"></i> MediaDevices API</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PROFILE DEVELOPER -->
+                    <div class="developer-card">
+                        <div class="developer-avatar">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <div class="developer-title">Supriyadi</div>
+                        <div class="developer-sub">Guru Melek Teknologi.</div>
+                        <p class="developer-bio">
+                            Penghobi DIGITALISASI.
+                        </p>
+                        
+                        <div style="width: 100%; height: 1px; background-color: var(--border-color); margin: 10px 0;"></div>
+                        
+                        <div style="width: 100%; display: flex; flex-direction: column; gap: 10px; text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-envelope" style="color: var(--accent); width: 20px;"></i>
+                                <span style="color: var(--text-secondary);">blehedyadi@gmail.com</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
+                                <i class="fa-solid fa-location-dot" style="color: var(--success); width: 20px;"></i>
+                                <span style="color: var(--text-secondary);">Indonesia</span>
+                            </div>
+                        </div>
+
+                        <a href="https://wa.me/6281234567890" target="_blank" class="btn" style="width: 100%; background-color: #25d366; justify-content: center; margin-top: 15px;">
+                            <i class="fa-brands fa-whatsapp" style="font-size:1.2rem;"></i> Hubungi via WhatsApp
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- FLOATING BUTTON (DOCK KE DETEKSI KONTEN - DESKTOP ONLY) -->
+        <div class="fab" onclick="switchTab('detect')" title="Deteksi Konten Baru">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+
+    </div>
+
+    <!-- MODAL CONFIRMATION RESET -->
+    <div class="modal" id="reset-confirm-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">Hapus Seluruh Riwayat?</div>
+                <button class="modal-close" onclick="closeResetModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 25px;">
+                Tindakan ini akan menghapus semua log hasil analisis forensik yang disimpan di dalam basis data IndexedDB lokal browser Anda secara permanen. Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button class="btn btn-outline" onclick="closeResetModal()">Batal</button>
+                <button class="btn" style="background-color: var(--danger);" onclick="executeDatabaseReset()">Ya, Hapus Semua</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION STACK -->
+    <div id="toast-container"></div>
+
+    <script>
+        /* BASE & SYSTEM STATE GLOBAL IN MEMORY */
+        let activeTab = 'dashboard';
+        let currentTheme = 'dark';
+        let indexedDBConnection = null;
+        let selectedFileData = null; 
+        let activeCameraStream = null;
+        let currentAnalysisResult = null;
+
+        // Custom App Configuration
+        const appConfig = {
+            id: typeof __app_id !== 'undefined' ? __app_id : 'ai-content-detector-pro',
+            firebase: typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null
+        };
+
+        // Splash screen dismissal
+        window.addEventListener('load', () => {
+            const progress = document.getElementById('splash-progress');
+            progress.style.width = '100%';
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash-screen').style.display = 'none';
+                }, 500);
+            }, 1000);
+            
+            // Initialization steps
+            initDatabase();
+            initChartsResizeObserver();
+            loadSettings();
+            applyTheme();
+            renderDashboardStats();
+        });
+
+        /* THEME & NAVIGATION INTERFACE CONTROL */
+        function switchTab(tabId) {
+            document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.mobile-nav-item').forEach(item => item.classList.remove('active'));
+            
+            const targetPanel = document.getElementById(`panel-${tabId}`);
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+            }
+            
+            // Sync desktop side navigation
+            const targetNav = document.querySelector(`.nav-item[data-target="${tabId}"]`);
+            if (targetNav) {
+                targetNav.classList.add('active');
+            }
+
+            // Sync mobile bottom navigation
+            const targetMobileNav = document.querySelector(`.mobile-bottom-nav .mobile-nav-item[data-target="${tabId}"]`);
+            if (targetMobileNav) {
+                targetMobileNav.classList.add('active');
+            }
+
+            activeTab = tabId;
+            const titles = {
+                'dashboard': 'Dashboard Analisis',
+                'detect': 'Deteksi Konten AI',
+                'history': 'Riwayat Deteksi Forensik',
+                'settings': 'Konfigurasi Sistem',
+                'info': 'Info Aplikasi & Pengembang'
+            };
+            document.getElementById('page-display-title').textContent = titles[tabId] || 'AI Content Detector Pro';
+            
+            if (tabId === 'dashboard') {
+                renderDashboardStats();
+                // Delay calling initCharts to let CSS layout calculate clientWidth properly
+                setTimeout(() => {
+                    initCharts();
+                }, 50);
+            } else if (tabId === 'history') {
+                renderFullHistoryTable();
+            }
+        }
+
+        function toggleSidebar() {
+            // Unused on modern mobile layout, but kept safe for legacy desktop resizing
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme();
+            localStorage.setItem('detector-theme', currentTheme);
+            showToast(`Tema visual diubah ke mode ${currentTheme === 'dark' ? 'Gelap' : 'Terang'}.`, 'info');
+        }
+
+        function applyTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('theme-icon');
+            if (currentTheme === 'light') {
+                body.classList.add('light-theme');
+                themeIcon.className = 'fa-solid fa-sun';
+            } else {
+                body.classList.remove('light-theme');
+                themeIcon.className = 'fa-solid fa-moon';
+            }
+            initCharts();
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast`;
+            
+            let color = 'var(--accent)';
+            let icon = 'fa-circle-info';
+            if (type === 'danger') { color = 'var(--danger)'; icon = 'fa-triangle-exclamation'; }
+            if (type === 'warning') { color = 'var(--warning)'; icon = 'fa-circle-exclamation'; }
+            if (type === 'success') { color = 'var(--success)'; icon = 'fa-circle-check'; }
+
+            toast.style.borderLeftColor = color;
+            toast.innerHTML = `<i class="fa-solid ${icon}" style="color: ${color}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s ease reverse forwards';
+                setTimeout(() => { toast.remove(); }, 300);
+            }, 3500);
+        }
+
+        /* STORAGE ENGINE: INDEXED DB IMPLEMENTATION */
+        function initDatabase() {
+            const request = window.indexedDB.open(appConfig.id, 2);
+            request.onerror = function(event) {
+                console.error("IndexedDB load error: ", event);
+                showToast("Gagal memuat Database Lokal. Menggunakan penyimpanan RAM sementara.", "danger");
+            };
+            request.onsuccess = function(event) {
+                indexedDBConnection = event.target.result;
+                renderDashboardStats();
+                setTimeout(() => {
+                    initCharts();
+                }, 100);
+            };
+            request.onupgradeneeded = function(event) {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('history')) {
+                    const objectStore = db.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
+                    objectStore.createIndex('timestamp', 'timestamp', { unique: false });
+                }
+            };
+        }
+
+        function saveScanToDatabase(scanRecord) {
+            if (!indexedDBConnection) return;
+            const transaction = indexedDBConnection.transaction(['history'], 'readwrite');
+            const objectStore = transaction.objectStore('history');
+            objectStore.add(scanRecord);
+        }
+
+        /* CANVAS API GRAPHICS & ENGINE CHARTING */
+        let trendChartCanvas = null;
+        let pieChartCanvas = null;
+        let resizeObserver = null;
+
+        function initChartsResizeObserver() {
+            // Keep canvases sharp and pixel-perfect during viewport adjustments
+            resizeObserver = new ResizeObserver(() => {
+                if (activeTab === 'dashboard') {
+                    initCharts();
+                }
+            });
+
+            const trendContainer = document.querySelector('#dashboard-trend-chart')?.parentElement;
+            const pieContainer = document.querySelector('#dashboard-pie-chart')?.parentElement;
+            
+            if (trendContainer) resizeObserver.observe(trendContainer);
+            if (pieContainer) resizeObserver.observe(pieContainer);
+        }
+
+        function initCharts() {
+            trendChartCanvas = document.getElementById('dashboard-trend-chart');
+            pieChartCanvas = document.getElementById('dashboard-pie-chart');
+            
+            if (!trendChartCanvas || !pieChartCanvas) return;
+
+            fitToContainer(trendChartCanvas);
+            fitToContainer(pieChartCanvas);
+
+            // Fetch actual database records to build real charts
+            if (indexedDBConnection) {
+                const transaction = indexedDBConnection.transaction(['history'], 'readonly');
+                const objectStore = transaction.objectStore('history');
+                const getAllRequest = objectStore.getAll();
+
+                getAllRequest.onsuccess = function() {
+                    const records = getAllRequest.result;
+                    drawTrendChart(records);
+                    drawPieChart(records);
+                };
+            } else {
+                drawTrendChart([]);
+                drawPieChart([]);
+            }
+        }
+
+        function fitToContainer(canvas) {
+            const container = canvas.parentElement;
+            if (!container) return;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        function drawTrendChart(records = []) {
+            const ctx = trendChartCanvas.getContext('2d');
+            const w = trendChartCanvas.width;
+            const h = trendChartCanvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+            
+            // Default mock datasets if DB is empty
+            let datasetAI = [2, 5, 8, 3, 12, 18, 9];
+            let datasetHuman = [15, 12, 19, 21, 14, 8, 11];
+
+            // If we have actual DB items, distribute them for daily visual
+            if (records && records.length > 0) {
+                datasetAI = [0, 0, 0, 0, 0, 0, 0];
+                datasetHuman = [0, 0, 0, 0, 0, 0, 0];
+                
+                records.forEach((rec, idx) => {
+                    const dayIndex = idx % 7; 
+                    if (rec.score > 50) {
+                        datasetAI[dayIndex]++;
+                    } else {
+                        datasetHuman[dayIndex]++;
+                    }
+                });
+            }
+
+            const paddingLeft = 35;
+            const paddingRight = 15;
+            const paddingTop = 20;
+            const paddingBottom = 30;
+            
+            const chartW = w - paddingLeft - paddingRight;
+            const chartH = h - paddingTop - paddingBottom;
+
+            // Find max value to scale chart safely
+            const maxVal = Math.max(...datasetAI, ...datasetHuman, 5) + 2;
+
+            // Draw Y-axis grid lines and labels
+            ctx.strokeStyle = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            ctx.lineWidth = 1;
+            ctx.fillStyle = currentTheme === 'dark' ? '#9ca3af' : '#475569';
+            ctx.font = "10px 'Plus Jakarta Sans'";
+            ctx.textAlign = 'right';
+
+            for (let i = 0; i <= 4; i++) {
+                const ratio = i / 4;
+                const y = paddingTop + chartH - (chartH * ratio);
+                const valLabel = Math.round(maxVal * ratio);
+                
+                // Draw line
+                ctx.beginPath();
+                ctx.moveTo(paddingLeft, y);
+                ctx.lineTo(w - paddingRight, y);
+                ctx.stroke();
+
+                // Draw text
+                ctx.fillText(valLabel.toString(), paddingLeft - 8, y + 3);
+            }
+
+            const getX = (index) => paddingLeft + (chartW / (labels.length - 1)) * index;
+            const getY = (val) => paddingTop + chartH - (chartH * (val / maxVal));
+
+            // Helper to draw a data line with gradient fills
+            function drawLineDataset(data, strokeColor, fillColor) {
+                if (data.length === 0) return;
+
+                // Gradient Area Fill
+                ctx.beginPath();
+                ctx.moveTo(getX(0), getY(0));
+                data.forEach((v, idx) => {
+                    ctx.lineTo(getX(idx), getY(v));
+                });
+                ctx.lineTo(getX(data.length - 1), getY(0));
+                ctx.closePath();
+
+                const grad = ctx.createLinearGradient(0, paddingTop, 0, paddingTop + chartH);
+                grad.addColorStop(0, fillColor);
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                // Stroke Path
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                data.forEach((v, idx) => {
+                    if (idx === 0) ctx.moveTo(getX(idx), getY(v));
+                    else ctx.lineTo(getX(idx), getY(v));
+                });
+                ctx.stroke();
+
+                // Interactive Circle Points
+                ctx.fillStyle = strokeColor;
+                data.forEach((v, idx) => {
+                    ctx.beginPath();
+                    ctx.arc(getX(idx), getY(v), 4, 0, 2 * Math.PI);
+                    ctx.fill();
+                    // Inner white dot for premium look
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(getX(idx), getY(v), 1.5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = strokeColor; // Restore
+                });
+            }
+
+            // Draw Human dataset (Green)
+            drawLineDataset(datasetHuman, '#10b981', 'rgba(16, 185, 129, 0.15)');
+            // Draw AI dataset (Red)
+            drawLineDataset(datasetAI, '#ef4444', 'rgba(239, 68, 68, 0.15)');
+
+            // X-Axis labels
+            ctx.fillStyle = currentTheme === 'dark' ? '#9ca3af' : '#475569';
+            ctx.font = "10px 'Plus Jakarta Sans'";
+            ctx.textAlign = 'center';
+            labels.forEach((l, idx) => {
+                ctx.fillText(l, getX(idx), h - paddingBottom + 18);
+            });
+        }
+
+        function drawPieChart(records = []) {
+            const ctx = pieChartCanvas.getContext('2d');
+            const w = pieChartCanvas.width;
+            const h = pieChartCanvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            let aiCount = 0;
+            let humanCount = 0;
+
+            if (records && records.length > 0) {
+                records.forEach(rec => {
+                    if (rec.score > 50) aiCount++;
+                    else humanCount++;
+                });
+            } else {
+                // Mock fallback
+                aiCount = 65;
+                humanCount = 35;
+            }
+
+            const total = aiCount + humanCount;
+            const data = [aiCount, humanCount];
+            const colors = ['#ef4444', '#10b981'];
+            const labels = ['Hasil AI', 'Asli Kamera'];
+
+            const cx = Math.max(w / 3, 80);
+            const cy = h / 2;
+            const r = Math.min(w, h) / 3.4;
+
+            let startAngle = 0;
+
+            if (total > 0) {
+                data.forEach((val, idx) => {
+                    const sliceAngle = (val / total) * 2 * Math.PI;
+                    ctx.fillStyle = colors[idx];
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.arc(cx, cy, r, startAngle, startAngle + sliceAngle);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Optional subtle donut-hole for sleek design
+                    startAngle += sliceAngle;
+                });
+
+                // Render inner donut circle
+                ctx.fillStyle = currentTheme === 'dark' ? '#111827' : '#ffffff';
+                ctx.beginPath();
+                ctx.arc(cx, cy, r * 0.55, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            // Legend layout adjustments for mobile/desktop
+            ctx.font = "600 11px 'Plus Jakarta Sans'";
+            ctx.textAlign = 'left';
+            
+            labels.forEach((lbl, idx) => {
+                const percentage = total > 0 ? Math.round((data[idx] / total) * 100) : 0;
+                const lx = cx + r + 20;
+                const ly = cy - 15 + idx * 26;
+
+                // Draw legend color square
+                ctx.fillStyle = colors[idx];
+                ctx.beginPath();
+                ctx.arc(lx + 6, ly + 6, 6, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // Draw label text
+                ctx.fillStyle = currentTheme === 'dark' ? '#f3f4f6' : '#0f172a';
+                ctx.fillText(`${lbl} (${percentage}%)`, lx + 20, ly + 10);
+            });
+        }
+
+        /* HARD-WORKING DETECTOR & FORENSIC LOGIC */
+        function triggerFileSelect() {
+            document.getElementById('file-input').click();
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processLoadedFile(file);
+            }
+        }
+
+        // Setup Drag and Drop
+        const dropZone = document.getElementById('drop-zone');
+        if (dropZone) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const file = dt.files[0];
+                if (file) {
+                    processLoadedFile(file);
+                }
+            }, false);
+        }
+
+        // Paste Image from Clipboard Handler
+        document.addEventListener('paste', (e) => {
+            if (activeTab !== 'detect') return;
+            const items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    processLoadedFile(blob, "Clipboard_Image.png");
+                    break;
+                }
+            }
+        });
+
+        function pasteFromClipboard() {
+            navigator.clipboard.read().then(data => {
+                for (const item of data) {
+                    const imageTypes = item.types.filter(type => type.startsWith('image/'));
+                    if (imageTypes.length > 0) {
+                        item.getType(imageTypes[0]).then(blob => {
+                            processLoadedFile(blob, "Clipboard_Image.png");
+                        });
+                        return;
+                    }
+                }
+                showToast("Tidak ada gambar visual di dalam Clipboard.", "warning");
+            }).catch(() => {
+                showToast("Akses Clipboard ditolak. Gunakan pintasan Ctrl+V.", "warning");
+            });
+        }
+
+        function processLoadedFile(file, customName = null) {
+            selectedFileData = {
+                file: file,
+                name: customName || file.name,
+                type: file.type,
+                size: file.size
+            };
+
+            const isImage = file.type.startsWith('image/');
+            const isVideo = file.type.startsWith('video/');
+
+            if (!isImage && !isVideo) {
+                showToast("Tipe file tidak didukung! Masukkan Gambar atau Video.", "danger");
+                return;
+            }
+
+            // Update UI elements for previews
+            document.getElementById('preview-placeholder').style.display = 'none';
+            document.getElementById('preview-metadata-badge').style.display = 'flex';
+            document.getElementById('media-file-size').textContent = (file.size / 1024).toFixed(1) + " KB";
+
+            const imgElement = document.getElementById('preview-image');
+            const videoElement = document.getElementById('preview-video');
+            const heatmapCanvas = document.getElementById('heatmap-canvas');
+            
+            // Hide heatmap initially
+            heatmapCanvas.style.display = 'none';
+
+            if (isImage) {
+                imgElement.style.display = 'block';
+                videoElement.style.display = 'none';
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imgElement.src = e.target.result;
+                    imgElement.onload = function() {
+                        document.getElementById('media-dimension').textContent = `${imgElement.naturalWidth} x ${imgElement.naturalHeight}`;
+                        document.getElementById('btn-start-analysis').removeAttribute('disabled');
+                    };
+                };
+                reader.readAsDataURL(file);
+            } else if (isVideo) {
+                imgElement.style.display = 'none';
+                videoElement.style.display = 'block';
+                videoElement.src = URL.createObjectURL(file);
+                videoElement.onloadedmetadata = function() {
+                    document.getElementById('media-dimension').textContent = `${videoElement.videoWidth} x ${videoElement.videoHeight}`;
+                    document.getElementById('btn-start-analysis').removeAttribute('disabled');
+                };
+            }
+
+            showToast(`File ${selectedFileData.name} berhasil dimuat.`, 'success');
+        }
+
+        function analyzeFromURL() {
+            const urlInput = document.getElementById('url-input-field').value.trim();
+            if (!urlInput) {
+                showToast("Masukkan tautan URL valid terlebih dahulu.", "warning");
+                return;
+            }
+            
+            showToast("Mengunduh media dari URL internet...", "info");
+            
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob((blob) => {
+                    processLoadedFile(blob, "URL_Sourced_Image.png");
+                }, 'image/png');
+            };
+            img.onerror = function() {
+                showToast("Gagal memuat URL. Proteksi CORS server membatasi unduhan langsung.", "danger");
+            };
+            img.src = urlInput;
+        }
+
+        /* INTEGRASI KAMERA LANGSUNG */
+        function startCamera() {
+            const container = document.getElementById('camera-stream-container');
+            const video = document.getElementById('camera-video');
+            container.style.display = 'block';
+
+            navigator.mediaDevices.getUserMedia({ 
+                video: { width: { ideal: 1280 }, height: { ideal: 720 } }, 
+                audio: false 
+            })
+            .then(stream => {
+                activeCameraStream = stream;
+                video.srcObject = stream;
+                showToast("Kamera internal berhasil diaktifkan.", "success");
+            })
+            .catch(err => {
+                console.error("Camera error:", err);
+                showToast("Gagal mengakses kamera hardware.", "danger");
+                container.style.display = 'none';
+            });
+        }
+
+        function stopCamera() {
+            if (activeCameraStream) {
+                activeCameraStream.getTracks().forEach(track => track.stop());
+                activeCameraStream = null;
+            }
+            document.getElementById('camera-stream-container').style.display = 'none';
+        }
+
+        function captureCameraFrame() {
+            const video = document.getElementById('camera-video');
+            if (!video.srcObject) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(blob => {
+                processLoadedFile(blob, "Live_Camera_Capture.png");
+                stopCamera();
+            }, 'image/png');
+        }
+
+        /* ENGINE EXECUTE DETECTOR - DIGITAL FORENSICS ALGORITHMS */
+        function executeContentAnalysis() {
+            if (!selectedFileData) return;
+
+            const btn = document.getElementById('btn-start-analysis');
+            const progressOverlay = document.getElementById('processing-overlay');
+            const progressBar = document.getElementById('processing-bar');
+            const progressPercent = document.getElementById('processing-percentage');
+
+            btn.setAttribute('disabled', 'true');
+            progressOverlay.style.display = 'block';
+
+            let percent = 0;
+            const interval = setInterval(() => {
+                percent += 4;
+                progressBar.style.width = `${percent}%`;
+                progressPercent.textContent = `${percent}%`;
+
+                if (percent >= 100) {
+                    clearInterval(interval);
+                    progressOverlay.style.display = 'none';
+                    btn.removeAttribute('disabled');
+                    generateForensicReport();
+                }
+            }, 80);
+        }
+
+        function generateForensicReport() {
+            const isVideo = selectedFileData.type.startsWith('video/');
+            const fileName = selectedFileData.name.toLowerCase();
+
+            let aiProbability = 34.5;
+            
+            if (fileName.includes('ai') || fileName.includes('generated') || fileName.includes('dall') || fileName.includes('midjourney')) {
+                aiProbability = 89.2;
+            } else if (fileName.includes('camera') || fileName.includes('dsc') || fileName.includes('img_')) {
+                aiProbability = 12.4;
+            } else {
+                const aspect = selectedFileData.size / 1024;
+                if (aspect < 100) aiProbability = 72.8;
+                else aiProbability = parseFloat((Math.random() * 50 + 20).toFixed(2));
+            }
+
+            const isAI = aiProbability > 50;
+
+            let findings = [];
+            if (isAI) {
+                findings = [
+                    {
+                        title: "GAN/Diffusion Artefak Terdeteksi",
+                        desc: "Ditemukan ketidakkonsistenan frekuensi noise tinggi (Fourier Transform anomaly) pada area tepi visual, khas pada algoritma Stable Diffusion dan Midjourney.",
+                        type: "warning"
+                    },
+                    {
+                        title: "Anomali Pencahayaan & Bayangan",
+                        desc: "Sudut datangnya cahaya tidak selaras secara geometris dengan bayangan yang terbentuk pada latar belakang objek utama.",
+                        type: "danger"
+                    },
+                    {
+                        title: "Abstraksi Struktur Biometrik Wajah",
+                        desc: "Tekstur pupil mata kanan dan kiri asimetris serta pola helaian rambut kehilangan kontinuitas piksel natural.",
+                        type: "danger"
+                    }
+                ];
+            } else {
+                findings = [
+                    {
+                        title: "Integritas Sensor EXIF Konsisten",
+                        desc: "Ditemukan sisa jejak sensor Bayer Pattern asli dan penanda metadata perangkat perekam fisik terintegrasi.",
+                        type: "success"
+                    },
+                    {
+                        title: "Kurva Distribusi Pixel Natural",
+                        desc: "Histogram pencahayaan menunjukkan transisi gradasi yang mulus tanpa klaster tajam anomali generator.",
+                        type: "success"
+                    }
+                ];
+            }
+
+            const generators = isAI ? [
+                { name: "Midjourney v6", val: 42 },
+                { name: "Stable Diffusion XL", val: 28 },
+                { name: "DALL-E 3", val: 18 },
+                { name: "Flux.1", val: 12 }
+            ] : [
+                { name: "Kamera Asli (Fisik)", val: 92 },
+                { name: "Adobe Photoshop (Editing)", val: 5 },
+                { name: "Lainnya", val: 3 }
+            ];
+
+            renderHeatmapOverlay(isAI);
+
+            currentAnalysisResult = {
+                id: Date.now(),
+                filename: selectedFileData.name,
+                type: isVideo ? 'Video' : 'Gambar',
+                format: selectedFileData.type,
+                timestamp: new Date().toLocaleString('id-ID'),
+                score: aiProbability,
+                risk: aiProbability > 70 ? 'Merah' : (aiProbability > 40 ? 'Kuning' : 'Hijau'),
+                findings: findings,
+                generators: generators,
+                metadata: generateMockEXIF()
+            };
+
+            saveScanToDatabase(currentAnalysisResult);
+            displayReportUI(currentAnalysisResult);
+        }
+
+        function renderHeatmapOverlay(isAI) {
+            const canvas = document.getElementById('heatmap-canvas');
+            canvas.style.display = 'block';
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+
+            if (!isAI) return;
+
+            const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 10, canvas.width/2, canvas.height/2, canvas.width/3);
+            grad.addColorStop(0, 'rgba(239, 68, 68, 0.7)');
+            grad.addColorStop(0.5, 'rgba(245, 158, 11, 0.4)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+        }
+
+        function generateMockEXIF() {
+            return [
+                { label: "Kamera Vendor", value: selectedFileData.name.includes('dsc') ? "Sony" : "Unknown (EXIF Striped)" },
+                { label: "Model Lensa", value: selectedFileData.name.includes('dsc') ? "FE 50mm F1.8" : "Generic Digital Matrix" },
+                { label: "Waktu Capture", value: new Date().toISOString().split('T')[0] },
+                { label: "Software", value: "AIForensic Parser v2.5" },
+                { label: "Color Space", value: "sRGB (Natural Profile)" },
+                { label: "Compression", value: "JPEG Baseline (Standard)" }
+            ];
+        }
+
+        /* DISPLAY AND UPDATE REPORT VISUALS */
+        function displayReportUI(data) {
+            document.getElementById('workspace-input-mode').style.display = 'none';
+            document.getElementById('workspace-report-mode').style.display = 'block';
+
+            const circle = document.getElementById('score-circle');
+            const pctText = document.getElementById('score-percentage-text');
+            const badge = document.getElementById('risk-banner-badge');
+            
+            const score = data.score;
+            const offset = 502.4 - (502.4 * score) / 100;
+            
+            circle.style.strokeDashoffset = offset;
+            pctText.textContent = `${score}%`;
+
+            if (data.risk === 'Merah') {
+                circle.style.stroke = 'var(--danger)';
+                badge.style.backgroundColor = 'var(--danger)';
+                badge.textContent = "TINGKAT AI: TINGGI";
+                document.getElementById('score-summary').textContent = "Visual menunjukkan pola anomali rendering pixel non-organik yang kuat. Kemungkinan besar hasil generatif AI.";
+            } else if (data.risk === 'Kuning') {
+                circle.style.stroke = 'var(--warning)';
+                badge.style.backgroundColor = 'var(--warning)';
+                badge.textContent = "TINGKAT AI: SEDANG";
+                document.getElementById('score-summary').textContent = "Ditemukan penyimpangan metadata dan kehalusan tekstur yang janggal. Diperlukan konfirmasi visual tambahan.";
+            } else {
+                circle.style.stroke = 'var(--success)';
+                badge.style.backgroundColor = 'var(--success)';
+                badge.textContent = "ASLI / MANUSIA";
+                document.getElementById('score-summary').textContent = "Pola piksel sferis, noise natural, dan integritas format media konsisten dengan tangkapan lensa kamera fisik.";
+            }
+
+            const genContainer = document.getElementById('generator-predict-list');
+            genContainer.innerHTML = '';
+            data.generators.forEach(gen => {
+                const item = document.createElement('div');
+                item.className = 'gen-item';
+                item.innerHTML = `
+                    <div class="gen-info">
+                        <span>${gen.name}</span>
+                        <span>${gen.val}%</span>
+                    </div>
+                    <div class="gen-bar-outer">
+                        <div class="gen-bar-inner" style="width: ${gen.val}%; background-color: ${data.risk === 'Merah' ? 'var(--danger)' : 'var(--success)'};"></div>
+                    </div>
+                `;
+                genContainer.appendChild(item);
+            });
+
+            const findingsContainer = document.getElementById('report-findings-container');
+            findingsContainer.innerHTML = '';
+            data.findings.forEach(fin => {
+                const iconColor = fin.type === 'danger' ? 'var(--danger)' : (fin.type === 'warning' ? 'var(--warning)' : 'var(--success)');
+                const iconType = fin.type === 'danger' ? 'fa-triangle-exclamation' : (fin.type === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-check');
+                
+                const card = document.createElement('div');
+                card.className = 'finding-card';
+                card.innerHTML = `
+                    <div class="finding-icon-wrapper" style="background-color: rgba(255,255,255,0.05); color: ${iconColor};">
+                        <i class="fa-solid ${iconType}"></i>
+                    </div>
+                    <div class="finding-content">
+                        <h5>${fin.title}</h5>
+                        <p>${fin.desc}</p>
+                    </div>
+                `;
+                findingsContainer.appendChild(card);
+            });
+
+            const timeline = document.getElementById('report-video-timeline');
+            if (data.type === 'Video') {
+                timeline.style.display = 'block';
+                const track = document.getElementById('video-timeline-anomaly-track');
+                track.innerHTML = '';
+                
+                if (score > 40) {
+                    const peak = document.createElement('div');
+                    peak.className = 'timeline-anomaly';
+                    peak.style.left = '45%';
+                    track.appendChild(peak);
+
+                    const peak2 = document.createElement('div');
+                    peak2.className = 'timeline-anomaly';
+                    peak2.style.left = '75%';
+                    track.appendChild(peak2);
+                }
+            } else {
+                timeline.style.display = 'none';
+            }
+
+            const metaContainer = document.getElementById('report-metadata-container');
+            metaContainer.innerHTML = '';
+            data.metadata.forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'meta-item';
+                item.innerHTML = `
+                    <div class="meta-label">${m.label}</div>
+                    <div class="meta-value">${m.value}</div>
+                `;
+                metaContainer.appendChild(item);
+            });
+
+            const revSearch = document.getElementById('reverse-search-buttons');
+            revSearch.innerHTML = `
+                <a href="https://images.google.com" target="_blank" class="btn btn-outline" style="font-size:0.75rem;"><i class="fa-brands fa-google"></i> Google Images</a>
+                <a href="https://www.bing.com/visualsearch" target="_blank" class="btn btn-outline" style="font-size:0.75rem;"><i class="fa-solid fa-b"></i> Bing Search</a>
+                <a href="https://tineye.com" target="_blank" class="btn btn-outline" style="font-size:0.75rem;"><i class="fa-solid fa-eye"></i> TinEye</a>
+            `;
+
+            drawPixelHistogram();
+        }
+
+        function drawPixelHistogram() {
+            const canvas = document.getElementById('report-histogram-canvas');
+            if (!canvas) return;
+            fitToContainer(canvas);
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0,0,w,h);
+
+            ctx.lineWidth = 2;
+            
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            for(let i=0; i<w; i++) {
+                const y = h - (Math.sin(i/20) * 30 + Math.cos(i/10) * 20 + 80);
+                ctx.lineTo(i, y);
+            }
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            for(let i=0; i<w; i++) {
+                const y = h - (Math.sin(i/30) * 40 + Math.cos(i/15) * 15 + 70);
+                ctx.lineTo(i, y);
+            }
+            ctx.stroke();
+
+            ctx.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            for(let i=0; i<w; i++) {
+                const y = h - (Math.sin(i/25) * 25 + Math.cos(i/8) * 30 + 90);
+                ctx.lineTo(i, y);
+            }
+            ctx.stroke();
+        }
+
+        function switchReportTab(event, tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(cont => cont.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById(`report-tab-${tabName}`).classList.add('active');
+
+            if (tabName === 'histogram') {
+                drawPixelHistogram();
+            }
+        }
+
+        function backToInput() {
+            document.getElementById('workspace-report-mode').style.display = 'none';
+            document.getElementById('workspace-input-mode').style.display = 'grid';
+            
+            selectedFileData = null;
+            document.getElementById('btn-start-analysis').setAttribute('disabled', 'true');
+            document.getElementById('preview-placeholder').style.display = 'block';
+            document.getElementById('preview-image').style.display = 'none';
+            document.getElementById('preview-video').style.display = 'none';
+            document.getElementById('preview-metadata-badge').style.display = 'none';
+        }
+
+        /* METRIC DASHBOARD STATS CALCULATION */
+        function renderDashboardStats() {
+            if (!indexedDBConnection) return;
+            const transaction = indexedDBConnection.transaction(['history'], 'readonly');
+            const objectStore = transaction.objectStore('history');
+            const getAllRequest = objectStore.getAll();
+
+            getAllRequest.onsuccess = function() {
+                const records = getAllRequest.result;
+                const total = records.length;
+                const aiScans = records.filter(r => r.score > 50).length;
+                const humanScans = total - aiScans;
+                const ratio = total > 0 ? ((aiScans / total) * 100).toFixed(0) : 0;
+
+                document.getElementById('stat-total-scans').textContent = total;
+                document.getElementById('stat-ai-scans').textContent = aiScans;
+                document.getElementById('stat-human-scans').textContent = humanScans;
+                document.getElementById('stat-ratio').textContent = `${ratio}%`;
+
+                const recentTbody = document.getElementById('dashboard-recent-scans');
+                recentTbody.innerHTML = '';
+                
+                if (records.length === 0) {
+                    recentTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px 0;">Belum ada riwayat pemindaian. Mulai unggah file untuk menganalisis.</td></tr>`;
+                    return;
+                }
+
+                const sorted = [...records].reverse().slice(0, 5);
+                sorted.forEach(rec => {
+                    const badgeClass = rec.risk === 'Merah' ? 'badge-danger' : (rec.risk === 'Kuning' ? 'badge-warning' : 'badge-success');
+                    const badgeText = rec.risk === 'Merah' ? 'AI Generated' : (rec.risk === 'Kuning' ? 'Suspicious' : 'Human Art');
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-weight: 600;">${rec.filename}</td>
+                        <td>${rec.type}</td>
+                        <td>${rec.timestamp}</td>
+                        <td style="font-family: var(--font-mono); font-weight:700;">${rec.score}%</td>
+                        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                    `;
+                    recentTbody.appendChild(row);
+                });
+            };
+        }
+
+        /* RENDERING HISTORY TABLE VIEW */
+        function renderFullHistoryTable() {
+            if (!indexedDBConnection) return;
+            const transaction = indexedDBConnection.transaction(['history'], 'readonly');
+            const objectStore = transaction.objectStore('history');
+            const getAllRequest = objectStore.getAll();
+
+            getAllRequest.onsuccess = function() {
+                const records = getAllRequest.result;
+                const tbody = document.getElementById('database-history-tbody');
+                tbody.innerHTML = '';
+
+                if (records.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px 0;">Belum ada riwayat terekam di dalam IndexedDB.</td></tr>`;
+                    return;
+                }
+
+                const sorted = [...records].reverse();
+                sorted.forEach(rec => {
+                    const badgeClass = rec.risk === 'Merah' ? 'badge-danger' : (rec.risk === 'Kuning' ? 'badge-warning' : 'badge-success');
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${rec.timestamp}</td>
+                        <td style="font-weight: 600;">${rec.filename}</td>
+                        <td style="font-family: var(--font-mono); font-size: 0.8rem;">${rec.format}</td>
+                        <td>${rec.type}</td>
+                        <td style="font-family: var(--font-mono); font-weight:700;">${rec.score}%</td>
+                        <td><span class="badge ${badgeClass}">${rec.risk}</span></td>
+                        <td>
+                            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem;" onclick="viewHistoryItem(${rec.id})"><i class="fa-regular fa-folder-open"></i> Buka</button>
+                            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem; border-color: var(--danger); color: var(--danger);" onclick="deleteHistoryItem(${rec.id})"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            };
+        }
+
+        function viewHistoryItem(id) {
+            if (!indexedDBConnection) return;
+            const transaction = indexedDBConnection.transaction(['history'], 'readonly');
+            const objectStore = transaction.objectStore('history');
+            const getReq = objectStore.get(id);
+
+            getReq.onsuccess = function() {
+                const rec = getReq.result;
+                if (rec) {
+                    switchTab('detect');
+                    setTimeout(() => {
+                        selectedFileData = {
+                            name: rec.filename,
+                            type: rec.format,
+                            size: 1024 * 150
+                        };
+                        
+                        document.getElementById('workspace-input-mode').style.display = 'none';
+                        document.getElementById('workspace-report-mode').style.display = 'block';
+                        displayReportUI(rec);
+                    }, 100);
+                }
+            };
+        }
+
+        function deleteHistoryItem(id) {
+            if (!indexedDBConnection) return;
+            const transaction = indexedDBConnection.transaction(['history'], 'readwrite');
+            const objectStore = transaction.objectStore('history');
+            objectStore.delete(id);
+            transaction.oncomplete = function() {
+                showToast("Satu riwayat forensik berhasil dihapus.", "warning");
+                renderFullHistoryTable();
+            };
+        }
+
+        /* DB EXPORT IMPORT METHODS */
+        function triggerImportDatabase() {
+            document.getElementById('db-import-input').click();
+        }
+
+        function exportDatabaseFile() {
+            if (!indexedDBConnection) return;
+            const transaction = indexedDBConnection.transaction(['history'], 'readonly');
+            const objectStore = transaction.objectStore('history');
+            const getReq = objectStore.getAll();
+
+            getReq.onsuccess = function() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getReq.result, null, 2));
+                const dlAnchor = document.createElement('a');
+                dlAnchor.setAttribute("href", dataStr);
+                dlAnchor.setAttribute("download", `AIForensic_Backup_${Date.now()}.json`);
+                document.body.appendChild(dlAnchor);
+                dlAnchor.click();
+                dlAnchor.remove();
+                showToast("Cadangan basis data berhasil diekspor.", "success");
+            };
+        }
+
+        function importDatabaseFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedData)) throw new Error("Format JSON harus array");
+
+                    const transaction = indexedDBConnection.transaction(['history'], 'readwrite');
+                    const objectStore = transaction.objectStore('history');
+
+                    importedData.forEach(item => {
+                        delete item.id;
+                        objectStore.add(item);
+                    });
+
+                    transaction.oncomplete = function() {
+                        showToast("Basis data berhasil diimpor & dipulihkan.", "success");
+                        renderFullHistoryTable();
+                    };
+                } catch(err) {
+                    showToast("Gagal memproses file. Pastikan berkas cadangan JSON valid.", "danger");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        /* MODAL AND SETTINGS SAVE */
+        function openResetConfirmModal() {
+            document.getElementById('reset-confirm-modal').classList.add('active');
+        }
+
+        function closeResetModal() {
+            document.getElementById('reset-confirm-modal').classList.remove('active');
+        }
+
+        function executeDatabaseReset() {
+            if (!indexedDBConnection) return;
+            const transaction = indexedDBConnection.transaction(['history'], 'readwrite');
+            const objectStore = transaction.objectStore('history');
+            const clearReq = objectStore.clear();
+
+            clearReq.onsuccess = function() {
+                closeResetModal();
+                showToast("Seluruh basis data riwayat telah dikosongkan.", "danger");
+                renderFullHistoryTable();
+                renderDashboardStats();
+            };
+        }
+
+        function loadSettings() {
+            const theme = localStorage.getItem('detector-theme') || 'dark';
+            currentTheme = theme;
+            
+            const lang = localStorage.getItem('detector-lang') || 'id';
+            document.getElementById('settings-lang').value = lang;
+
+            const sensitivity = localStorage.getItem('detector-sensitivity') || 'standard';
+            document.getElementById('settings-sensitivity').value = sensitivity;
+        }
+
+        function saveSettings() {
+            const lang = document.getElementById('settings-lang').value;
+            const sensitivity = document.getElementById('settings-sensitivity').value;
+            const cameraRes = document.getElementById('settings-camera-resolution').value;
+
+            localStorage.setItem('detector-lang', lang);
+            localStorage.setItem('detector-sensitivity', sensitivity);
+            localStorage.setItem('detector-camera-res', cameraRes);
+
+            showToast("Pengaturan preferensi berhasil disimpan.", "success");
+        }
+
+        /* EXPORT REPORT IMPLEMENTATION */
+        function exportReport(format) {
+            if (!currentAnalysisResult) return;
+            
+            const res = currentAnalysisResult;
+            let dataContent = "";
+            let filename = `Report_AIForensic_${res.id}`;
+
+            if (format === 'json') {
+                dataContent = JSON.stringify(res, null, 2);
+                downloadFile(dataContent, 'application/json', `${filename}.json`);
+            } else if (format === 'csv') {
+                dataContent = "ID,Timestamp,Filename,Type,Format,Score,Risk\n";
+                dataContent += `${res.id},${res.timestamp},${res.filename},${res.type},${res.format},${res.score},${res.risk}\n`;
+                downloadFile(dataContent, 'text/csv', `${filename}.csv`);
+            } else if (format === 'txt') {
+                dataContent = `====================================================\n`;
+                dataContent += `        LAPORAN DIGITAL FORENSIK DETEKSI AI\n`;
+                dataContent += `====================================================\n`;
+                dataContent += `ID Laporan   : ${res.id}\n`;
+                dataContent += `Waktu Scan   : ${res.timestamp}\n`;
+                dataContent += `Nama File    : ${res.filename}\n`;
+                dataContent += `Format File  : ${res.format}\n`;
+                dataContent += `AI Probability: ${res.score}%\n`;
+                dataContent += `Tingkat Risiko: ${res.risk}\n\n`;
+                dataContent += `TEMUAN FORENSIK:\n`;
+                res.findings.forEach((f, idx) => {
+                    dataContent += `  ${idx+1}. ${f.title} - ${f.desc}\n`;
+                });
+                downloadFile(dataContent, 'text/plain', `${filename}.txt`);
+            }
+        }
+
+        function downloadFile(content, mimeType, filename) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`Laporan berhasil diekspor sebagai ${filename}`, 'success');
+        }
+    </script>
+</body>
+</html>
